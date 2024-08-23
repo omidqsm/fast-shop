@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import TypeVar, ClassVar
 
 from fastapi import Depends
-from sqlalchemy import update, select
+from sqlalchemy import update, select, delete
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -37,6 +37,10 @@ class RepoABC(ABC):
     async def update(self, where: dict, values: dict):
         raise NotImplementedError
 
+    @abstractmethod
+    async def delete(self, where: dict):
+        raise NotImplementedError
+
 
 class Repo(RepoABC):
     model: ClassVar[Base] = Base
@@ -64,6 +68,10 @@ class Repo(RepoABC):
         stmt = select(self.model).filter_by(**where)
         return await self.session.scalar(stmt)
 
-    async def update(self, where: dict, values: dict):
+    async def update(self, where: dict, values: dict) -> None:
         stmt = update(self.model).filter_by(**where).values(**values)
+        await self._execute(stmt)
+
+    async def delete(self, where: dict) -> None:
+        stmt = delete(self.model).filter_by(**where)
         await self._execute(stmt)

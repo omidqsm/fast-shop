@@ -59,6 +59,17 @@ async def test_product_manipulation():
         assert response_data['category'] == 'mobile'
         assert response_data['info']['name'] == 'asus'
 
+        response_data['category'] = 'laptop'
+        response = await client.put('/product/', json=response_data)
+        response_data = response.json()
+        assert response_data['category'] == 'laptop'
+
+        response = await client.delete('/product/1')
+        assert response.status_code == 204
+
+        response = await client.get('/product/1')
+        assert response.status_code == 404
+
 
 @pytest.mark.asyncio
 async def test_address_manipulation():
