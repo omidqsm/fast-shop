@@ -51,7 +51,7 @@ class Crypto(CryptoABC):
         return token
 
     @classmethod
-    def parse_token(cls, token: str = Depends(settings.oauth2_scheme)) -> dict:
+    def parse_token(cls, token: str = Depends(settings.auth_scheme)) -> dict:
         """parses and verifies the access token and returns its payload"""
         try:
             # decode and verify token

@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     token_expire_seconds: int = 1800
     timezone: tzinfo = pytz.timezone('Asia/Tehran')
     login_path: str = 'auth/login'
-    oauth2_scheme: APIKeyHeader = APIKeyHeader(name='X-API-Key')  # X-API-Key can be any arbitrary name
+    auth_scheme: APIKeyHeader = APIKeyHeader(name='X-API-Key')  # X-API-Key can be any arbitrary name
     auth_route_prefix: str = '/auth'
 
     model_config = SettingsConfigDict(env_file="envs/.env")
