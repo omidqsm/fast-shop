@@ -101,11 +101,11 @@ async def test_product_manipulation(create_default_users):
         assert response_data['info']['name'] == 'asus'
 
         response_data['category'] = 'laptop'
-        response = await client.put('/product/', json=response_data)
+        response = await client.put('/product/', json=response_data, headers=admin_access_header)
         response_data = response.json()
         assert response_data['category'] == 'laptop'
 
-        response = await client.delete(f'/product/{pk}')
+        response = await client.delete(f'/product/{pk}', headers=admin_access_header)
         assert response.status_code == 204
 
         response = await client.get(f'/product/{pk}')

@@ -9,13 +9,11 @@ from service.auth import AuthService
 
 router = APIRouter(route_class=LogRoute, prefix='/product', tags=['Product'])
 
-# todo: in product manipulation we should check permissions so that only admins can make change
-
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=ProductBase)
 async def create(
-    _: Annotated[int, Security(AuthService.get_current_user_id, scopes=["admin"])],
     product: ProductBase,
-    product_repo: ProductRepoABC = Depends(ProductRepo)
+    product_repo: ProductRepoABC = Depends(ProductRepo),
+    _ = Security(AuthService.authorize, scopes=["admin"]),
 ):
     product_model = product.to_model()
     await product_repo.add(product_model)
@@ -32,7 +30,8 @@ async def get(
 @router.put("/", response_model=ProductBase)
 async def update(
     product: ProductBase,
-    product_repo: ProductRepoABC = Depends(ProductRepo)
+    product_repo: ProductRepoABC = Depends(ProductRepo),
+    _ = Security(AuthService.authorize, scopes=["admin"]),
 ):
     product_values = product.model_dump()
     pk = product_values.get('id')
@@ -42,7 +41,8 @@ async def update(
 
 @router.delete("/{pk}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete(
-        pk: int,
-        product_repo: ProductRepoABC = Depends(ProductRepo)
+    pk: int,
+    product_repo: ProductRepoABC = Depends(ProductRepo),
+    _ = Security(AuthService.authorize, scopes=["admin"]),
 ):
     await product_repo.delete({'id': pk})

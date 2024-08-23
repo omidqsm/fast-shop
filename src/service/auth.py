@@ -43,18 +43,23 @@ class AuthService(AuthServiceABC):
 
     @staticmethod
     def get_current_user_id(
-        security_scopes: SecurityScopes,
         payload: dict = Depends(Crypto.parse_token)
     ) -> int:
         user_id = payload.get('sub')
         if user_id is None:
             raise credentials_exception
+        return user_id
+
+    @staticmethod
+    def authorize(
+        security_scopes: SecurityScopes,
+        payload: dict = Depends(Crypto.parse_token)
+    ):
         # check scopes (permissions)
         user_scopes = payload.get('scopes')
         for scope in security_scopes.scopes:
             if scope not in user_scopes:
                 raise access_forbidden_exception
-        return user_id
 
     async def authenticate(self, phone: str, password: str) -> str:
         user = await self.user_repo.get_one_by_phone(phone)
