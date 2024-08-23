@@ -3,6 +3,10 @@ from httpx import AsyncClient, ASGITransport
 
 from tests.app import pytest_app
 
+async def get_access_header(client: AsyncClient, credentials: dict) -> dict:
+    response = await client.post('/auth/login', json=credentials)
+    access_token = response.json()['access_token']
+    return {'X-API-Key': access_token}
 
 @pytest.mark.asyncio
 async def test_authentication():
@@ -19,18 +23,16 @@ async def test_authentication():
         response = await client.post('/auth/signup', json=user)
         assert response.status_code == 201
         response_data = response.json()
-        assert response_data.get('id') is not None
+        pk = response_data.get('id')
+        assert pk is not None
 
         response = await client.get('/auth/me')
         assert response.status_code == 403
 
         credentials = {'phone': '+982133551020', 'password': 'ABCdef1234'}
-        response = await client.post('/auth/login', json=credentials)
-        assert response.status_code == 200
+        access_header = await get_access_header(client, credentials)
 
-        access_token = response.json()['access_token']
-        headers = {'X-API-Key': access_token}
-        response = await client.get('/auth/me', headers=headers)
+        response = await client.get('/auth/me', headers=access_header)
         assert response.status_code == 200
         response_data = response.json()
         assert response_data['nid'] == user['nid']
@@ -52,7 +54,11 @@ async def test_product_manipulation():
         response = await client.post('/product/', json=product)
         assert response.status_code == 201
 
-        response = await client.get('/product/1')
+        response_data = response.json()
+        pk = response_data.get('id')
+        assert pk is not None
+
+        response = await client.get(f'/product/{pk}')
         assert response.status_code == 200
 
         response_data = response.json()
@@ -64,10 +70,10 @@ async def test_product_manipulation():
         response_data = response.json()
         assert response_data['category'] == 'laptop'
 
-        response = await client.delete('/product/1')
+        response = await client.delete(f'/product/{pk}')
         assert response.status_code == 204
 
-        response = await client.get('/product/1')
+        response = await client.get(f'/product/{pk}')
         assert response.status_code == 404
 
 
@@ -84,13 +90,15 @@ async def test_address_manipulation():
         }
 
         credentials = {'phone': '+982133551020', 'password': 'ABCdef1234'}
-        response = await client.post('/auth/login', json=credentials)
-        access_token = response.json()['access_token']
-        headers = {'X-API-Key': access_token}
-        response = await client.post('/address/', json=address, headers=headers)
+        access_header = await get_access_header(client, credentials)
+        response = await client.post('/address/', json=address, headers=access_header)
         assert response.status_code == 201
 
-        response = await client.get('/address/1', headers=headers)
+        response_data = response.json()
+        pk = response_data.get('id')
+        assert pk is not None
+
+        response = await client.get(f'/address/{pk}', headers=access_header)
         assert response.status_code == 200
 
         response_data = response.json()
@@ -98,16 +106,16 @@ async def test_address_manipulation():
         assert response_data['description'] == 'Azadi Blvd'
 
         response_data['description'] = 'Valiasr Ave'
-        response = await client.put('/address/', json=response_data, headers=headers)
+        response = await client.put('/address/', json=response_data, headers=access_header)
         assert response.status_code == 200
 
-        response = await client.get('/address/1', headers=headers)
+        response = await client.get(f'/address/{pk}', headers=access_header)
         assert response.status_code == 200
         response_data = response.json()
         assert response_data['description'] == 'Valiasr Ave'
 
-        response = await client.delete('/address/1', headers=headers)
+        response = await client.delete(f'/address/{pk}', headers=access_header)
         assert response.status_code == 204
 
-        response = await client.get('/address/1', headers=headers)
+        response = await client.get(f'/address/{pk}', headers=access_header)
         assert response.status_code == 404
