@@ -21,12 +21,12 @@ class User(Common):
     __tablename__ = "user"
 
     password: Mapped[str]
-    role: Mapped[str] = mapped_column(String(), default='user')
     nid: Mapped[str] = mapped_column(String(length=10))
     first_name: Mapped[str] = mapped_column(String(50))
     last_name: Mapped[str] = mapped_column(String(50))
     phone: Mapped[str] = mapped_column(String(20))
     email: Mapped[Optional[str]]
+    scopes: Mapped[str] = mapped_column(String(), default='user')  # permissions
 
     addresses: Mapped[List["Address"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 

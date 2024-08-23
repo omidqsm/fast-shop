@@ -1,8 +1,11 @@
-from fastapi import APIRouter, status, Depends
+from typing import Annotated
+
+from fastapi import APIRouter, status, Depends, Security
 
 from app_infra.routes import LogRoute
 from data.product import ProductRepoABC, ProductRepo
 from model.schema import ProductBase
+from service.auth import AuthService
 
 router = APIRouter(route_class=LogRoute, prefix='/product', tags=['Product'])
 
@@ -10,13 +13,13 @@ router = APIRouter(route_class=LogRoute, prefix='/product', tags=['Product'])
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=ProductBase)
 async def create(
+    _: Annotated[int, Security(AuthService.get_current_user_id, scopes=["admin"])],
     product: ProductBase,
     product_repo: ProductRepoABC = Depends(ProductRepo)
 ):
     product_model = product.to_model()
     await product_repo.add(product_model)
     return product_model
-
 
 @router.get("/{pk}", response_model=ProductBase)
 async def get(

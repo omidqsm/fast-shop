@@ -9,6 +9,7 @@ from passlib.context import CryptContext
 
 from config import settings
 from helpers.exceptions import credentials_exception
+from model.orm import User
 
 
 class CryptoABC(ABC):
@@ -22,7 +23,7 @@ class CryptoABC(ABC):
         raise NotImplementedError
 
     @classmethod
-    def create_access_token(cls, user_id: int) -> str:
+    def create_access_token(cls, user) -> str:
         raise NotImplementedError
 
     @classmethod
@@ -44,9 +45,9 @@ class Crypto(CryptoABC):
         return cls.crypto_context.hash(string)
 
     @classmethod
-    def create_access_token(cls, user_id: int) -> str:
+    def create_access_token(cls, user: User) -> str:
         exp_datetime = datetime.now(tz=settings.timezone) + timedelta(seconds=settings.token_expire_seconds)
-        payload = {'sub': user_id, 'exp': exp_datetime}
+        payload = {'sub': user.id, 'scopes': user.scopes.split(), 'exp': exp_datetime}
         token = jwt.encode(payload, settings.secret_key, algorithm=cls.algorithm)
         return token
 

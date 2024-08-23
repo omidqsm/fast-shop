@@ -1,11 +1,13 @@
 import dataclasses
+import itertools
 from abc import ABC, abstractmethod
 from fastapi import Depends, status, HTTPException
+from fastapi.security import SecurityScopes
 from sqlalchemy.exc import IntegrityError
 
 from data.user import UserRepoABC, UserRepo
 from helpers.crypto import Crypto, CryptoABC
-from helpers.exceptions import credentials_exception
+from helpers.exceptions import credentials_exception, access_forbidden_exception
 from model.orm import User
 from model.schema import UserIn
 
@@ -40,17 +42,25 @@ class AuthService(AuthServiceABC):
         self.crypto = crypto if isinstance(crypto, CryptoABC) else Crypto()
 
     @staticmethod
-    def get_current_user_id(payload: dict = Depends(Crypto.parse_token)) -> int:
+    def get_current_user_id(
+        security_scopes: SecurityScopes,
+        payload: dict = Depends(Crypto.parse_token)
+    ) -> int:
         user_id = payload.get('sub')
         if user_id is None:
             raise credentials_exception
+        # check scopes (permissions)
+        user_scopes = payload.get('scopes')
+        for scope in security_scopes.scopes:
+            if scope not in user_scopes:
+                raise access_forbidden_exception
         return user_id
 
     async def authenticate(self, phone: str, password: str) -> str:
         user = await self.user_repo.get_one_by_phone(phone)
         if not user or not self.crypto.verify_hash(password, user.password):
             raise credentials_exception
-        return self.crypto.create_access_token(user.id)
+        return self.crypto.create_access_token(user)
 
     async def signup(self, user_in: UserIn) -> User:
         user = user_in.to_model()

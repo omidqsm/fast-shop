@@ -1,12 +1,37 @@
 import pytest
+import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 
+from data.user import UserRepo
+from helpers.crypto import Crypto
+from model.orm import User
 from tests.app import pytest_app
 
 async def get_access_header(client: AsyncClient, credentials: dict) -> dict:
     response = await client.post('/auth/login', json=credentials)
     access_token = response.json()['access_token']
     return {'X-API-Key': access_token}
+
+@pytest_asyncio.fixture()
+async def create_default_users():
+    admin = User(
+        nid="1111111111",
+        first_name="admin",
+        last_name="admin",
+        phone="+9811111111",
+        password=Crypto.get_hash("admin_password"),
+        scopes="admin"
+    )
+    buyer = User(
+        nid="2222222222",
+        first_name="buyer",
+        last_name="buyer",
+        phone="+9822334455",
+        password=Crypto.get_hash("buyer_password"),
+    )
+    user_repo = UserRepo()
+    await user_repo.add(admin)
+    await user_repo.add(buyer)
 
 @pytest.mark.asyncio
 async def test_authentication():
@@ -40,7 +65,7 @@ async def test_authentication():
 
 
 @pytest.mark.asyncio
-async def test_product_manipulation():
+async def test_product_manipulation(create_default_users):
     async with AsyncClient(transport=ASGITransport(app=pytest_app), base_url="http://test") as client:
         product = {
           "category": "mobile",
@@ -52,6 +77,16 @@ async def test_product_manipulation():
         }
 
         response = await client.post('/product/', json=product)
+        assert response.status_code == 403
+
+        credentials = {'phone': '+9822334455', 'password': 'buyer_password'}
+        user_access_header = await get_access_header(client, credentials)
+        response = await client.post('/product/', json=product, headers=user_access_header)
+        assert response.status_code == 403
+
+        credentials = {'phone': '+9811111111', 'password': 'admin_password'}
+        admin_access_header = await get_access_header(client, credentials)
+        response = await client.post('/product/', json=product, headers=admin_access_header)
         assert response.status_code == 201
 
         response_data = response.json()
