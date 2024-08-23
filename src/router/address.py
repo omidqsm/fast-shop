@@ -25,14 +25,27 @@ async def create(
 @router.get("/{pk}", response_model=AddressBase)
 async def get(
     pk: int,
+    user_id: int = Depends(AuthService.get_current_user_id),
     address_repo: AddressRepoABC = Depends(AddressRepo)
 ):
-    return await address_repo.get_one(pk)
+    where = {'id': pk, 'user_id': user_id}
+    return await address_repo.find_one(where, not_found_error=True)
+
 
 @router.put("/", response_model=AddressBase)
-async def put(
+async def update(
     address: AddressBase,
     user_id: int = Depends(AuthService.get_current_user_id),
     address_service: AddressServiceABC = Depends(AddressService)
 ):
     return await address_service.update(address, user_id)
+
+
+@router.delete("/{pk}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete(
+    pk: int,
+    user_id: int = Depends(AuthService.get_current_user_id),
+    address_repo: AddressRepoABC = Depends(AddressRepo)
+):
+    where = {'id': pk, 'user_id': user_id}
+    await address_repo.delete(where)

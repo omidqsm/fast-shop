@@ -30,7 +30,7 @@ class RepoABC(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def find_one(self, where: dict):
+    async def find_one(self, where: dict, not_found_error=False):
         raise NotImplementedError
 
     @abstractmethod
@@ -64,9 +64,12 @@ class Repo(RepoABC):
             self.session.add(obj)
         return obj
 
-    async def find_one(self, where: dict) -> model:
+    async def find_one(self, where: dict, not_found_error=False) -> model:
         stmt = select(self.model).filter_by(**where)
-        return await self.session.scalar(stmt)
+        obj = await self.session.scalar(stmt)
+        if not_found_error and not obj:
+            raise entity_not_found_exception
+        return obj
 
     async def update(self, where: dict, values: dict) -> None:
         stmt = update(self.model).filter_by(**where).values(**values)

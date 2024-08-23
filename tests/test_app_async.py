@@ -75,12 +75,12 @@ async def test_product_manipulation():
 async def test_address_manipulation():
     async with AsyncClient(transport=ASGITransport(app=pytest_app), base_url="http://test") as client:
         address = {
-            "state": 'Tehran',
-            "city": 'Tehran',
+            "state": "Tehran",
+            "city": "Tehran",
             "latitude": 10.123456,
             "longitude": 15.654321,
-            "description": 'Azadi Blvd',
-            "postal_code": '1234567890',
+            "description": "Azadi Blvd",
+            "postal_code": "1234567890"
         }
 
         credentials = {'phone': '+982133551020', 'password': 'ABCdef1234'}
@@ -90,7 +90,7 @@ async def test_address_manipulation():
         response = await client.post('/address/', json=address, headers=headers)
         assert response.status_code == 201
 
-        response = await client.get('/address/1')
+        response = await client.get('/address/1', headers=headers)
         assert response.status_code == 200
 
         response_data = response.json()
@@ -101,7 +101,13 @@ async def test_address_manipulation():
         response = await client.put('/address/', json=response_data, headers=headers)
         assert response.status_code == 200
 
-        response = await client.get('/address/1')
+        response = await client.get('/address/1', headers=headers)
+        assert response.status_code == 200
         response_data = response.json()
         assert response_data['description'] == 'Valiasr Ave'
 
+        response = await client.delete('/address/1', headers=headers)
+        assert response.status_code == 204
+
+        response = await client.get('/address/1', headers=headers)
+        assert response.status_code == 404
