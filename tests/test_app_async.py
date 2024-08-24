@@ -30,7 +30,7 @@ async def create_default_users():
         password=Crypto.get_hash("buyer_password"),
     )
     user_repo = UserRepo()
-    await user_repo.add([buyer, admin])
+    await user_repo.add((buyer, admin))
 
 @pytest.mark.asyncio
 async def test_authentication():

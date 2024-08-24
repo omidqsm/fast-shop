@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar, ClassVar
+from typing import TypeVar, ClassVar, Iterable
 
 from fastapi import Depends
 from multimethod import multimethod
@@ -71,7 +71,7 @@ class Repo(RepoABC):
         return obj
 
     @add.register
-    async def _(self, obj: list[model]) -> list[model]:
+    async def _(self, obj: Iterable[model]) -> Iterable[model]:
         async with self.session.begin():
             self.session.add_all(obj)
         return obj
