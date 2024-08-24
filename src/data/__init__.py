@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import TypeVar, ClassVar
 
 from fastapi import Depends
+from multimethod import multimethod
 from sqlalchemy import update, select, delete
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,7 +27,7 @@ class RepoABC(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def add(self, obj) -> model:
+    async def add(self, obj) -> model | list[model]:
         raise NotImplementedError
 
     @abstractmethod
@@ -59,9 +60,20 @@ class Repo(RepoABC):
         except NoResultFound:
             raise entity_not_found_exception
 
-    async def add(self, obj: Base) -> model:
+    @multimethod
+    async def add(self, obj):
+        pass
+
+    @add.register
+    async def _(self, obj: model) -> model:
         async with self.session.begin():
             self.session.add(obj)
+        return obj
+
+    @add.register
+    async def _(self, obj: list[model]) -> list[model]:
+        async with self.session.begin():
+            self.session.add_all(obj)
         return obj
 
     async def find_one(self, where: dict, not_found_error=False) -> model:
