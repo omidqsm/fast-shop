@@ -34,7 +34,7 @@ class AuthServiceABC(ABC):
     async def get_me(self, pk):
         raise NotImplementedError
 
-
+# todo: @dataclass?!
 class AuthService(AuthServiceABC):
 
     def __init__(self, user_repo: UserRepoABC = Depends(UserRepo), crypto: CryptoABC = Depends(Crypto)):

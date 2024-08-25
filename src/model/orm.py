@@ -56,6 +56,7 @@ class Order(Common):
     status_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     address_id: Mapped[int] = mapped_column(ForeignKey("address.id"))
     address: Mapped["Address"] = relationship()
+    products: Mapped[List["OrderProduct"]] = relationship(back_populates="order", cascade="all, delete-orphan")
 
 
 class Product(Common):
@@ -74,7 +75,7 @@ class OrderProduct(Common):
     price: Mapped[int]
 
     order_id: Mapped[int] = mapped_column(ForeignKey("order.id"))
-    order: Mapped["Order"] = relationship()
+    order: Mapped["Order"] = relationship(back_populates="products")
 
     product_id: Mapped[int] = mapped_column(ForeignKey("product.id"))
     product: Mapped["Product"] = relationship()

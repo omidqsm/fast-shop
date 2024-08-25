@@ -3,7 +3,7 @@ from typing import TypeVar, ClassVar, Iterable
 
 from fastapi import Depends
 from multimethod import multimethod
-from sqlalchemy import update, select, delete
+from sqlalchemy import update, select, delete, exists
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -42,6 +42,10 @@ class RepoABC(ABC):
     async def delete(self, where: dict):
         raise NotImplementedError
 
+    @abstractmethod
+    async def exists(self, where: dict, not_found_error=False) -> bool:
+        raise NotImplementedError
+
 
 class Repo(RepoABC):
     model: ClassVar[Base] = Base
@@ -78,7 +82,8 @@ class Repo(RepoABC):
 
     async def find_one(self, where: dict, not_found_error=False) -> model:
         stmt = select(self.model).filter_by(**where)
-        obj = await self.session.scalar(stmt)
+        async with self.session:
+            obj = await self.session.scalar(stmt)
         if not_found_error and not obj:
             raise entity_not_found_exception
         return obj
@@ -90,3 +95,12 @@ class Repo(RepoABC):
     async def delete(self, where: dict) -> None:
         stmt = delete(self.model).filter_by(**where)
         await self._execute(stmt)
+
+    async def exists(self, where: dict, not_found_error=False) -> bool:
+        stmt = select(self.model.id).filter_by(**where).exists()
+        stmt = select(stmt)
+        async with self.session:
+            result = await self.session.scalar(stmt)
+        if not_found_error and not result:
+            raise entity_not_found_exception
+        return result

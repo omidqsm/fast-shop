@@ -9,6 +9,7 @@ from model.orm import Address
 from model.schema import AddressBase
 
 
+@dataclass
 class AddressServiceABC(ABC):
     address_repo: AddressRepoABC
 

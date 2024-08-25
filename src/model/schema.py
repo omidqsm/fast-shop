@@ -3,7 +3,7 @@ from typing import Self, ClassVar
 import phonenumbers
 from pydantic import BaseModel, model_validator, field_validator, EmailStr, SecretStr, ConfigDict
 
-from model.orm import User, Product, Base, Address
+from model.orm import User, Product, Base, Address, Order
 
 
 class BaseSchema(BaseModel):
@@ -12,9 +12,9 @@ class BaseSchema(BaseModel):
 
     _model: ClassVar = Base
 
-    def to_model(self) -> _model:
-        dump = self.model_dump()
-        return self._model(**dump)
+    def to_model(self, **kwargs) -> _model:
+        dump = self.model_dump(exclude={'id'})
+        return self._model(**dump, **kwargs)
 
 
 class Token(BaseModel):
@@ -61,7 +61,7 @@ class UserIn(UserBase):
         return self
 
     def to_model(self) -> User:
-        dump = self.model_dump(exclude={'password', 're_password'})
+        dump = self.model_dump(exclude={'password', 're_password', 'id'})
         return User(**dump)
 
 
@@ -83,3 +83,12 @@ class AddressBase(BaseSchema):
     postal_code: str
 
     _model = Address
+
+
+class OrderBase(BaseSchema):
+    address_id: int
+
+    _model = Order
+
+class OrderIn(OrderBase):
+    pass
