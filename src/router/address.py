@@ -36,7 +36,7 @@ async def get(
 async def update(
     address: AddressBase,
     user_id: int = Depends(AuthService.get_current_user_id),
-    address_service: AddressServiceABC = Depends(AddressService)
+    address_service: AddressServiceABC = Depends(AddressService),
 ):
     return await address_service.update(address, user_id)
 

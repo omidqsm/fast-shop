@@ -17,9 +17,10 @@ class AddressServiceABC(ABC):
         raise NotImplementedError
 
 
-@dataclass
 class AddressService(AddressServiceABC):
-    address_repo: AddressRepoABC = Depends(AddressRepo)
+
+    def __init__(self, address_repo: AddressRepoABC = Depends(AddressRepo)):
+        self.address_repo = address_repo if isinstance(address_repo, AddressRepoABC) else AddressRepo()
 
     async def update(self, address: AddressBase, user_id: int) -> Address:
         address_values = address.model_dump()

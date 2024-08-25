@@ -20,18 +20,15 @@ class OrderServiceABC(ABC):
         raise NotImplementedError
 
 
-@dataclass
 class OrderService(OrderServiceABC):
-    address_repo: AddressRepo = Depends(AddressRepo)
-    order_repo: OrderRepo = Depends(OrderRepo)
 
-    # def __init__(
-    #         self,
-    #         address_repo: AddressRepoABC = Depends(AddressRepo),
-    #         order_repo: OrderRepoABC = Depends(OrderRepo)
-    # ):
-    #     self.address_repo = address_repo if isinstance(address_repo, AddressRepoABC) else AddressRepo()
-    #     self.order_repo = order_repo if isinstance(order_repo, OrderRepoABC) else OrderRepo()
+    def __init__(
+            self,
+            address_repo: AddressRepoABC = Depends(AddressRepo),
+            order_repo: OrderRepoABC = Depends(OrderRepo)
+    ):
+        self.address_repo = address_repo if isinstance(address_repo, AddressRepoABC) else AddressRepo()
+        self.order_repo = order_repo if isinstance(order_repo, OrderRepoABC) else OrderRepo()
 
     async def create(self, order_in: OrderIn, user_id: int) -> Order:
         order = order_in.to_model(status=OrderStatus.created.value)

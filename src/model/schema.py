@@ -90,5 +90,6 @@ class OrderBase(BaseSchema):
 
     _model = Order
 
+
 class OrderIn(OrderBase):
     pass
