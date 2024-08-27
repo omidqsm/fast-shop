@@ -5,7 +5,6 @@ from sqlmodel import SQLModel, Field, Relationship
 
 
 class Base(SQLModel):
-    __abstract__ = True
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(sa_type=DateTime(timezone=True), sa_column_kwargs={'server_default': func.now()})
     updated_at: datetime = Field(sa_type=DateTime(timezone=True), sa_column_kwargs={'server_default': func.now(), 'onupdate': func.now()})
