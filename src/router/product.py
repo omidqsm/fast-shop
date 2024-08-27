@@ -4,22 +4,24 @@ from fastapi import APIRouter, status, Depends, Security
 
 from app_infra.routes import LogRoute
 from data.product import ProductRepoABC, ProductRepo
-from model.schema import ProductBase
+from model.schema import ProductBase, ProductOut
 from service.auth import AuthService
 
 router = APIRouter(route_class=LogRoute, prefix='/product', tags=['Product'])
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=ProductBase)
+
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=ProductOut)
 async def create(
     product: ProductBase,
     product_repo: ProductRepoABC = Depends(ProductRepo),
-    _ = Security(AuthService.authorize, scopes=["admin"]),
+    _=Security(AuthService.authorize, scopes=["admin"]),
 ):
     product_model = product.to_model()
     await product_repo.add(product_model)
     return product_model
 
-@router.get("/{pk}", response_model=ProductBase)
+
+@router.get("/{pk}", response_model=ProductOut)
 async def get(
     pk: int,
     product_repo: ProductRepoABC = Depends(ProductRepo)
@@ -27,14 +29,14 @@ async def get(
     return await product_repo.get_one(id=pk)
 
 
-@router.put("/", response_model=ProductBase)
+@router.put("/{pk}", response_model=ProductOut)
 async def update(
+    pk: int,
     product: ProductBase,
     product_repo: ProductRepoABC = Depends(ProductRepo),
-    _ = Security(AuthService.authorize, scopes=["admin"]),
+    _=Security(AuthService.authorize, scopes=["admin"]),
 ):
     product_values = product.model_dump()
-    pk = product_values.get('id')
     await product_repo.update({'id': pk}, product_values)
     return await product_repo.get_one(id=pk)
 
@@ -43,6 +45,6 @@ async def update(
 async def delete(
     pk: int,
     product_repo: ProductRepoABC = Depends(ProductRepo),
-    _ = Security(AuthService.authorize, scopes=["admin"]),
+    _=Security(AuthService.authorize, scopes=["admin"]),
 ):
     await product_repo.delete(id=pk)

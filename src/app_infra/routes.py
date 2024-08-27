@@ -34,6 +34,9 @@ class LogRoute(APIRoute):
             start_time = time.time()
             try:
                 response = await original_route_handler(request)
+
+            # todo: why am i catching exceptions here?! specially when it's only for logging. it must go to exception
+            #       layer in app_infra
             except RequestValidationError as e:
                 logger.exception(str(e.args[0][0]['msg']), request_id=request.state.request_id)
                 raise e

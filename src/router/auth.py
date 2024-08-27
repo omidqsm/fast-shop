@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, status
 from app_infra.routes import LogRoute
 from config import settings
 from model.orm import User
-from model.schema import UserIn, UserBase, Token, PhoneLogin
+from model.schema import UserIn, Token, PhoneLogin, UserOut
 from service.auth import AuthServiceABC, AuthService
 
 # todo: we should avoid logging for signup and login apis, since the carry sensitive data
@@ -15,7 +15,7 @@ from service.auth import AuthServiceABC, AuthService
 router = APIRouter(route_class=LogRoute, prefix=settings.auth_route_prefix, tags=['Auth'])
 
 
-@router.post("/signup", status_code=status.HTTP_201_CREATED, response_model=UserBase)
+@router.post("/signup", status_code=status.HTTP_201_CREATED, response_model=UserOut)
 async def signup(
     user_in: UserIn,
     auth_service: AuthServiceABC = Depends(AuthService)
@@ -32,6 +32,6 @@ async def login(
     return Token(access_token=token)
 
 
-@router.get("/me", response_model=UserBase)
+@router.get("/me", response_model=UserOut)
 async def get_me(user: User = Depends(AuthService().get_me)):
     return user

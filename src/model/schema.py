@@ -7,7 +7,6 @@ from model.orm import User, Product, Base, Address, Order
 
 
 class BaseSchema(BaseModel):
-    id: int | None = None
     model_config = ConfigDict(from_attributes=True)
 
     _model: ClassVar = Base
@@ -33,6 +32,18 @@ class UserBase(BaseSchema):
     phone: str
     email: EmailStr | None = None
 
+
+class UserIn(UserBase):
+    re_password: SecretStr
+    password: SecretStr
+
+    @model_validator(mode='after')
+    def check_passwords_match(self) -> Self:
+        pw1 = self.password.get_secret_value()
+        pw2 = self.re_password.get_secret_value()
+        if pw1 != pw2:
+            raise ValueError('passwords do not match')
+        return self
     @field_validator('nid')
     @classmethod
     def check_nid_length(cls, v: str):
@@ -47,22 +58,14 @@ class UserBase(BaseSchema):
         phonenumbers.is_valid_number(p)  # raises exception in case of invalid number
         return v
 
-
-class UserIn(UserBase):
-    re_password: SecretStr
-    password: SecretStr
-
-    @model_validator(mode='after')
-    def check_passwords_match(self) -> Self:
-        pw1 = self.password.get_secret_value()
-        pw2 = self.re_password.get_secret_value()
-        if pw1 != pw2:
-            raise ValueError('passwords do not match')
-        return self
-
     def to_model(self) -> User:
         dump = self.model_dump(exclude={'password', 're_password', 'id'})
         return User(**dump)
+
+
+class UserOut(UserBase):
+    id: int
+    # todo: add created_at and updated_at dates
 
 
 class ProductBase(BaseSchema):
@@ -72,6 +75,10 @@ class ProductBase(BaseSchema):
     stock_quantity: int
 
     _model = Product
+
+
+class ProductOut(ProductBase):
+    id: int
 
 
 class AddressBase(BaseSchema):
@@ -85,6 +92,10 @@ class AddressBase(BaseSchema):
     _model = Address
 
 
+class AddressOut(AddressBase):
+    id: int
+
+
 class OrderBase(BaseSchema):
     address_id: int
 
@@ -93,3 +104,7 @@ class OrderBase(BaseSchema):
 
 class OrderIn(OrderBase):
     pass
+
+
+class OrderOut(OrderBase):
+    id: int

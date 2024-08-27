@@ -117,7 +117,9 @@ async def test_product_manipulation(create_default_users):
         pk = response_data.get('id')
         assert pk is not None
 
-        response = await client.get(f'/product/{pk}')
+        url = f'/product/{pk}'
+
+        response = await client.get(url)
         assert response.status_code == 200
 
         response_data = response.json()
@@ -125,14 +127,14 @@ async def test_product_manipulation(create_default_users):
         assert response_data['info']['name'] == 'asus'
 
         response_data['category'] = 'laptop'
-        response = await client.put('/product/', json=response_data, headers=admin_access_header)
+        response = await client.put(url, json=response_data, headers=admin_access_header)
         response_data = response.json()
         assert response_data['category'] == 'laptop'
 
-        response = await client.delete(f'/product/{pk}', headers=admin_access_header)
+        response = await client.delete(url, headers=admin_access_header)
         assert response.status_code == 204
 
-        response = await client.get(f'/product/{pk}')
+        response = await client.get(url)
         assert response.status_code == 404
 
 
@@ -157,7 +159,9 @@ async def test_address_manipulation(create_default_users):
         pk = response_data.get('id')
         assert pk is not None
 
-        response = await client.get(f'/address/{pk}', headers=access_header)
+        url = f'/address/{pk}'
+
+        response = await client.get(url, headers=access_header)
         assert response.status_code == 200
         #
         response_data = response.json()
@@ -165,18 +169,18 @@ async def test_address_manipulation(create_default_users):
         assert response_data['description'] == 'Azadi Blvd'
 
         response_data['description'] = 'Valiasr Ave'
-        response = await client.put('/address/', json=response_data, headers=access_header)
+        response = await client.put(url, json=response_data, headers=access_header)
         assert response.status_code == 200
 
-        response = await client.get(f'/address/{pk}', headers=access_header)
+        response = await client.get(url, headers=access_header)
         assert response.status_code == 200
         response_data = response.json()
         assert response_data['description'] == 'Valiasr Ave'
 
-        response = await client.delete(f'/address/{pk}', headers=access_header)
+        response = await client.delete(url, headers=access_header)
         assert response.status_code == 204
 
-        response = await client.get(f'/address/{pk}', headers=access_header)
+        response = await client.get(url, headers=access_header)
         assert response.status_code == 404
 
 
