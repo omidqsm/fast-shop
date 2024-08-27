@@ -1,87 +1,75 @@
 from datetime import datetime, tzinfo
-from typing import List, Any, Optional
 
-from sqlalchemy import String, ForeignKey, JSON, DateTime, func
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
-
-class Base(DeclarativeBase):
-    pass
+from sqlalchemy import String, ForeignKey, JSON, DateTime, func, Column
+from sqlmodel import SQLModel, Field, Relationship
 
 
-class Common(Base):
+class Base(SQLModel):
     __abstract__ = True
+    id: int | None = Field(default=None, primary_key=True)
+    created_at: datetime = Field(sa_type=DateTime(timezone=True), sa_column_kwargs={'server_default': func.now()})
+    updated_at: datetime = Field(sa_type=DateTime(timezone=True), sa_column_kwargs={'server_default': func.now(), 'onupdate': func.now()})
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True),
-        onupdate=func.now(),
-        server_default=func.now()
+
+class User(Base, table=True):
+    password: str
+    nid: str = Field(max_length=10, min_length=10)
+    first_name: str = Field(max_length=50)
+    last_name: str = Field(max_length=50)
+    phone: str = Field(max_length=20)
+    email: str | None = None
+    scopes: str | None = Field(default='user')  # permissions
+
+    addresses: list["Address"] | None = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={'cascade': "all, delete-orphan"}
     )
 
 
-class User(Common):
-    __tablename__ = "user"
+class Address(Base, table=True):
 
-    password: Mapped[str]
-    nid: Mapped[str] = mapped_column(String(length=10))
-    first_name: Mapped[str] = mapped_column(String(50))
-    last_name: Mapped[str] = mapped_column(String(50))
-    phone: Mapped[str] = mapped_column(String(20))
-    email: Mapped[Optional[str]]
-    scopes: Mapped[str] = mapped_column(String(), default='user')  # permissions
+    state: str
+    city: str
+    description: str
+    postal_code: str
+    latitude: float | None = None
+    longitude: float | None = None
 
-    addresses: Mapped[List["Address"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-
-
-class Address(Common):
-    __tablename__ = "address"
-
-    state: Mapped[str]
-    city: Mapped[str]
-    latitude: Mapped[Optional[float]]
-    longitude: Mapped[Optional[float]]
-    description: Mapped[str]
-    postal_code: Mapped[str]
-
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
-    user: Mapped["User"] = relationship(back_populates="addresses")
+    user_id: int | None = Field(default=None, foreign_key="user.id")
+    user: User | None = Relationship(back_populates="addresses")
 
     def __repr__(self) -> str:
         address = f'{self.state} - {self.city} - {self.description}'
         return f"Address(id={self.id!r}, address={address})"
 
 
-class Order(Common):
-    __tablename__ = "order"
+class Order(Base, table=True):
+    status: str
+    status_date: datetime = Field(sa_column=Column(DateTime(timezone=True), server_default=func.now()))
 
-    status: Mapped[str]
-    status_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    address_id: Mapped[int] = mapped_column(ForeignKey("address.id"))
-    address: Mapped["Address"] = relationship()
-    products: Mapped[List["OrderProduct"]] = relationship(back_populates="order", cascade="all, delete-orphan")
+    address_id: int = Field(default=None, foreign_key="address.id")
+    address: Address = Relationship()
 
-
-class Product(Common):
-    __tablename__ = "product"
-
-    category: Mapped[str]
-    info: Mapped[dict] = mapped_column(JSON())
-    price: Mapped[int]
-    stock_quantity: Mapped[int]
+    # products: Mapped[List["OrderProduct"]] = relationship(back_populates="order", cascade="all, delete-orphan")
 
 
-class OrderProduct(Common):
-    __tablename__ = "order_product"
+class Product(Base, table=True):
+    category: str
+    info: dict = Field(sa_type=JSON())
+    price: int
+    stock_quantity: int
 
-    quantity: Mapped[int]
-    price: Mapped[int]
 
-    order_id: Mapped[int] = mapped_column(ForeignKey("order.id"))
-    order: Mapped["Order"] = relationship(back_populates="products")
-
-    product_id: Mapped[int] = mapped_column(ForeignKey("product.id"))
-    product: Mapped["Product"] = relationship()
+# class OrderProduct(Common):
+#     __tablename__ = "order_product"
+#
+#     quantity: Mapped[int]
+#     price: Mapped[int]
+#
+#     order_id: Mapped[int] = mapped_column(ForeignKey("order.id"))
+#     order: Mapped["Order"] = relationship(back_populates="products")
+#
+#     product_id: Mapped[int] = mapped_column(ForeignKey("product.id"))
+#     product: Mapped["Product"] = relationship()
 
 
