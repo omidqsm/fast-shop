@@ -8,10 +8,12 @@ from helpers.crypto import Crypto
 from model.orm import User, Address
 from tests.app import pytest_app
 
+
 async def get_access_header(client: AsyncClient, credentials: dict) -> dict:
     response = await client.post('/auth/login', json=credentials)
     access_token = response.json()['access_token']
     return {'X-API-Key': access_token}
+
 
 @pytest_asyncio.fixture()
 async def create_default_users():
@@ -33,6 +35,7 @@ async def create_default_users():
     user_repo = UserRepo()
     await user_repo.add((buyer, admin))
 
+
 @pytest_asyncio.fixture()
 async def create_user_and_address():
     user = User(
@@ -52,6 +55,7 @@ async def create_user_and_address():
     )
     address = await AddressRepo().add(address)
     return user, address
+
 
 @pytest.mark.asyncio
 async def test_authentication():
@@ -155,7 +159,7 @@ async def test_address_manipulation(create_default_users):
 
         response = await client.get(f'/address/{pk}', headers=access_header)
         assert response.status_code == 200
-
+        #
         response_data = response.json()
         assert response_data['id'] == pk
         assert response_data['description'] == 'Azadi Blvd'

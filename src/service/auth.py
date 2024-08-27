@@ -75,4 +75,4 @@ class AuthService(AuthServiceABC):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='User already exists')
 
     async def get_me(self, pk: int = Depends(get_current_user_id)) -> User:
-        return await self.user_repo.get_one(pk)
+        return await self.user_repo.get_one(id=pk)

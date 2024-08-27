@@ -28,8 +28,7 @@ async def get(
     user_id: int = Depends(AuthService.get_current_user_id),
     address_repo: AddressRepoABC = Depends(AddressRepo)
 ):
-    where = {'id': pk, 'user_id': user_id}
-    return await address_repo.find_one(where, not_found_error=True)
+    return await address_repo.get_one(id=pk, user_id=user_id)
 
 
 @router.put("/", response_model=AddressBase)
@@ -47,5 +46,4 @@ async def delete(
     user_id: int = Depends(AuthService.get_current_user_id),
     address_repo: AddressRepoABC = Depends(AddressRepo)
 ):
-    where = {'id': pk, 'user_id': user_id}
-    await address_repo.delete(where)
+    await address_repo.delete(id=pk, user_id=user_id)

@@ -32,6 +32,6 @@ class OrderService(OrderServiceABC):
 
     async def create(self, order_in: OrderIn, user_id: int) -> Order:
         order = order_in.to_model(status=OrderStatus.created.value)
-        if await self.address_repo.exists(Address.id == order.address_id, Address.user_id == user_id):
+        if await self.address_repo.exists(id=order.address_id, user_id=user_id):
             await self.order_repo.add(order)
             return order

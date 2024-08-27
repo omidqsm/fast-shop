@@ -23,7 +23,11 @@ class RepoABC(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_one(self, pk) -> model:
+    async def find_one(self, **where):
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_one(self, **where):
         raise NotImplementedError
 
     @abstractmethod
@@ -31,19 +35,15 @@ class RepoABC(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def find_one(self, where: dict, not_found_error=False):
-        raise NotImplementedError
-
-    @abstractmethod
     async def update(self, where: dict, values: dict):
         raise NotImplementedError
 
     @abstractmethod
-    async def delete(self, where: dict):
+    async def delete(self, **where):
         raise NotImplementedError
 
     @abstractmethod
-    async def exists(self, *where) -> bool:
+    async def exists(self, **where) -> bool:
         raise NotImplementedError
 
 
@@ -61,11 +61,18 @@ class Repo(RepoABC):
             await self.session.execute(s)
         await self.session.commit()
 
-    async def get_one(self, pk) -> model:
+    async def get_one(self, **where):
         try:
-            return await self.session.get_one(self.model, pk)
+            stmt = select(self.model).filter_by(**where)
+            async with self.session as s:
+                return (await s.scalars(stmt)).one()
         except NoResultFound:
             raise entity_not_found_exception
+
+    async def find_one(self, **where) -> model:
+        stmt = select(self.model).filter_by(**where)
+        async with self.session:
+            return await self.session.scalar(stmt)
 
     @multimethod
     async def add(self, obj):
@@ -83,23 +90,16 @@ class Repo(RepoABC):
             self.session.add_all(obj)
         return obj
 
-    async def find_one(self, where: dict, not_found_error=False) -> model:
-        stmt = select(self.model).filter_by(**where)
-        async with self.session:
-            obj = await self.session.scalar(stmt)
-        if not_found_error and not obj:
-            raise entity_not_found_exception
-        return obj
-
     async def update(self, where: dict, values: dict) -> None:
         stmt = update(self.model).filter_by(**where).values(**values)
         await self._execute(stmt)
 
-    async def delete(self, where: dict) -> None:
+    async def delete(self, **where) -> None:
         stmt = delete(self.model).filter_by(**where)
         await self._execute(stmt)
 
-    async def exists(self, *where: BinaryExpression) -> bool:
-        stmt = exists(1).where(*where).select()
+    async def exists(self, **where) -> bool:
+        # stmt = exists(1).where(*where).select()  # second way
+        stmt = select(self.model.id).filter_by(**where).exists()
         async with self.session as s:
-            return await s.scalar(stmt)
+            return await s.scalar(select(stmt))

@@ -24,7 +24,7 @@ async def get(
     pk: int,
     product_repo: ProductRepoABC = Depends(ProductRepo)
 ):
-    return await product_repo.get_one(pk)
+    return await product_repo.get_one(id=pk)
 
 
 @router.put("/", response_model=ProductBase)
@@ -36,7 +36,7 @@ async def update(
     product_values = product.model_dump()
     pk = product_values.get('id')
     await product_repo.update({'id': pk}, product_values)
-    return await product_repo.get_one(pk)
+    return await product_repo.get_one(id=pk)
 
 
 @router.delete("/{pk}", status_code=status.HTTP_204_NO_CONTENT)
@@ -45,4 +45,4 @@ async def delete(
     product_repo: ProductRepoABC = Depends(ProductRepo),
     _ = Security(AuthService.authorize, scopes=["admin"]),
 ):
-    await product_repo.delete({'id': pk})
+    await product_repo.delete(id=pk)
