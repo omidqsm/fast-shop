@@ -1,9 +1,16 @@
+from datetime import datetime
 from typing import Self, ClassVar
 
 import phonenumbers
 from pydantic import BaseModel, model_validator, field_validator, EmailStr, SecretStr, ConfigDict
 
 from model.orm import User, Product, Base, Address, Order
+
+
+class BaseOut(BaseModel):
+    id: int
+    created_at: datetime
+    updated_at: datetime
 
 
 class BaseSchema(BaseModel):
@@ -63,9 +70,8 @@ class UserIn(UserBase):
         return User(**dump)
 
 
-class UserOut(UserBase):
-    id: int
-    # todo: add created_at and updated_at dates
+class UserOut(UserBase, BaseOut):
+    pass
 
 
 class ProductBase(BaseSchema):
@@ -77,8 +83,8 @@ class ProductBase(BaseSchema):
     _model = Product
 
 
-class ProductOut(ProductBase):
-    id: int
+class ProductOut(ProductBase, BaseOut):
+    pass
 
 
 class AddressBase(BaseSchema):
@@ -92,8 +98,8 @@ class AddressBase(BaseSchema):
     _model = Address
 
 
-class AddressOut(AddressBase):
-    id: int
+class AddressOut(AddressBase, BaseOut):
+    pass
 
 
 class OrderBase(BaseSchema):
@@ -106,5 +112,5 @@ class OrderIn(OrderBase):
     pass
 
 
-class OrderOut(OrderBase):
-    id: int
+class OrderOut(OrderBase, BaseOut):
+    pass
