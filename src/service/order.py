@@ -6,7 +6,7 @@ from fastapi import Depends
 from data.Address import AddressRepo, AddressRepoABC
 from data.order import OrderRepoABC, OrderRepo
 from model.enums import OrderStatus
-from model.orm import Order
+from model.orm import Order, Address
 from model.schema import OrderBase, OrderIn
 
 
@@ -32,7 +32,6 @@ class OrderService(OrderServiceABC):
 
     async def create(self, order_in: OrderIn, user_id: int) -> Order:
         order = order_in.to_model(status=OrderStatus.created.value)
-        address_lookup = {'id': order.address_id, 'user_id': user_id}
-        await self.address_repo.exists(where=address_lookup, not_found_error=True)
-        await self.order_repo.add(order)
-        return order
+        if await self.address_repo.exists(Address.id == order.address_id, Address.user_id == user_id):
+            await self.order_repo.add(order)
+            return order

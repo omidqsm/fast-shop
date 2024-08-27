@@ -133,7 +133,7 @@ async def test_product_manipulation(create_default_users):
 
 
 @pytest.mark.asyncio
-async def test_address_manipulation():
+async def test_address_manipulation(create_default_users):
     async with AsyncClient(transport=ASGITransport(app=pytest_app), base_url="http://test") as client:
         address = {
             "state": "Tehran",
@@ -144,7 +144,7 @@ async def test_address_manipulation():
             "postal_code": "1234567890"
         }
 
-        credentials = {'phone': '+982133551020', 'password': 'ABCdef1234'}
+        credentials = {'phone': '+9822334455', 'password': 'buyer_password'}
         access_header = await get_access_header(client, credentials)
         response = await client.post('/address/', json=address, headers=access_header)
         assert response.status_code == 201

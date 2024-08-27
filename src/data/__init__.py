@@ -3,7 +3,7 @@ from typing import TypeVar, ClassVar, Iterable
 
 from fastapi import Depends
 from multimethod import multimethod
-from sqlalchemy import update, select, delete, exists
+from sqlalchemy import update, select, delete, exists, BinaryExpression
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -43,7 +43,7 @@ class RepoABC(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def exists(self, where: dict, not_found_error=False) -> bool:
+    async def exists(self, *where) -> bool:
         raise NotImplementedError
 
 
@@ -54,9 +54,12 @@ class Repo(RepoABC):
         self.session = session if isinstance(session, AsyncSession) else async_session_maker()
 
     async def _execute(self, *statements):
-        async with self.session.begin():
-            for s in statements:
-                await self.session.execute(s)
+        # async with self.session.begin():
+        #     for s in statements:
+        #         await self.session.execute(s)
+        for s in statements:
+            await self.session.execute(s)
+        await self.session.commit()
 
     async def get_one(self, pk) -> model:
         try:
@@ -96,11 +99,7 @@ class Repo(RepoABC):
         stmt = delete(self.model).filter_by(**where)
         await self._execute(stmt)
 
-    async def exists(self, where: dict, not_found_error=False) -> bool:
-        stmt = select(self.model.id).filter_by(**where).exists()
-        stmt = select(stmt)
-        async with self.session:
-            result = await self.session.scalar(stmt)
-        if not_found_error and not result:
-            raise entity_not_found_exception
-        return result
+    async def exists(self, *where: BinaryExpression) -> bool:
+        stmt = exists(1).where(*where).select()
+        async with self.session as s:
+            return await s.scalar(stmt)
