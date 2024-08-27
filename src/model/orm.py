@@ -37,10 +37,6 @@ class Address(Base, table=True):
     user_id: int | None = Field(default=None, foreign_key="user.id")
     user: User | None = Relationship(back_populates="addresses")
 
-    def __repr__(self) -> str:
-        address = f'{self.state} - {self.city} - {self.description}'
-        return f"Address(id={self.id!r}, address={address})"
-
 
 class Order(Base, table=True):
     status: str
