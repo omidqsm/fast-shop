@@ -1,8 +1,6 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 
-from sqlalchemy import update
-
-from data import RepoABC, Repo
+from data._base import RepoABC, Repo
 from model.model import Address
 
 
