@@ -1,23 +1,60 @@
-from datetime import datetime, tzinfo
+from datetime import datetime
+from typing import Self
 
-from sqlalchemy import String, ForeignKey, JSON, DateTime, func, Column
+import phonenumbers
+from pydantic import EmailStr, SecretStr, model_validator, field_validator, ConfigDict
+from sqlalchemy import JSON, DateTime, func, Column, String
 from sqlmodel import SQLModel, Field, Relationship
 
 
 class Base(SQLModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int | None = Field(default=None, primary_key=True)
-    created_at: datetime = Field(sa_type=DateTime(timezone=True), sa_column_kwargs={'server_default': func.now()})
-    updated_at: datetime = Field(sa_type=DateTime(timezone=True), sa_column_kwargs={'server_default': func.now(), 'onupdate': func.now()})
+    created_at: datetime | None = Field(default=None, sa_type=DateTime(timezone=True), sa_column_kwargs={'server_default': func.now()})
+    updated_at: datetime | None = Field(default=None, sa_type=DateTime(timezone=True), sa_column_kwargs={'server_default': func.now(), 'onupdate': func.now()})
 
 
-class User(Base, table=True):
-    password: str
-    nid: str = Field(max_length=10, min_length=10)
-    first_name: str = Field(max_length=50)
-    last_name: str = Field(max_length=50)
-    phone: str = Field(max_length=20)
-    email: str | None = None
-    scopes: str | None = Field(default='user')  # permissions
+class UserBase(SQLModel):
+    nid: str
+    first_name: str
+    last_name: str
+    phone: str
+    email: EmailStr | None = None
+
+
+class UserIn(UserBase):
+    re_password: SecretStr
+    password: SecretStr
+
+    @model_validator(mode='after')
+    def check_passwords_match(self) -> Self:
+        pw1 = self.password.get_secret_value()
+        pw2 = self.re_password.get_secret_value()
+        if pw1 != pw2:
+            raise ValueError('passwords do not match')
+        return self
+    @field_validator('nid')
+    @classmethod
+    def check_nid_length(cls, v: str):
+        if len(v) != 10:
+            raise ValueError('nid must be 10 characters long')
+        return v
+
+    @field_validator('phone')
+    @classmethod
+    def check_phone_number(cls, v: str):
+        p = phonenumbers.parse(v, region='IR')
+        phonenumbers.is_valid_number(p)  # raises exception in case of invalid number
+        return v
+
+
+class UserOut(UserBase, Base):
+    pass
+
+
+class User(UserBase, Base, table=True):
+    password: SecretStr = Field(sa_type=String())
+    scopes: str = Field(default='user')  # permissions
 
     addresses: list["Address"] | None = Relationship(
         back_populates="user",

@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, status
 
 from app_infra.routes import LogRoute
 from config import settings
-from model.orm import User
-from model.schema import UserIn, Token, PhoneLogin, UserOut
+from model.orm import User, UserIn, UserOut
+from model.schema import Token, PhoneLogin
 from service.auth import AuthServiceABC, AuthService
 
 # todo: we should avoid logging for signup and login apis, since the carry sensitive data

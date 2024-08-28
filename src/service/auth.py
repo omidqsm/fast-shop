@@ -8,8 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from data.user import UserRepoABC, UserRepo
 from helpers.crypto import Crypto, CryptoABC
 from helpers.exceptions import credentials_exception, access_forbidden_exception
-from model.orm import User
-from model.schema import UserIn
+from model.orm import User, UserIn
 
 
 @dataclasses.dataclass
@@ -67,7 +66,7 @@ class AuthService(AuthServiceABC):
         return self.crypto.create_access_token(user)
 
     async def signup(self, user_in: UserIn) -> User:
-        user = user_in.to_model()
+        user = User.model_validate(user_in)
         user.password = self.crypto.get_hash(user_in.password.get_secret_value())
         try:
             return await self.user_repo.add(user)
