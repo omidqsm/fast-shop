@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar, ClassVar, Iterable
+from typing import ClassVar, Iterable
 
 from fastapi import Depends
 from multimethod import multimethod
-from sqlalchemy import update, select, delete, exists, BinaryExpression
+from sqlalchemy import update, select, delete
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,6 +26,10 @@ class RepoABC[T](ABC):
 
     @abstractmethod
     async def get_one(self, **where):
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_by_ids(self, ids: list):
         raise NotImplementedError
 
     @abstractmethod
@@ -52,12 +56,12 @@ class Repo(RepoABC):
         self.session = session if isinstance(session, AsyncSession) else async_session_maker()
 
     async def _execute(self, *statements):
-        # async with self.session.begin():
-        #     for s in statements:
-        #         await self.session.execute(s)
-        for s in statements:
-            await self.session.execute(s)
-        await self.session.commit()
+        async with self.session.begin():
+            for s in statements:
+                await self.session.execute(s)
+        # for s in statements:
+        #     await self.session.execute(s)
+        # await self.session.commit()
 
     async def get_one(self, **where):
         try:
@@ -66,6 +70,12 @@ class Repo(RepoABC):
                 return (await s.scalars(stmt)).one()
         except NoResultFound:
             raise entity_not_found_exception
+
+    async def get_by_ids(self, ids: list[int]) -> Iterable[model]:
+        from sqlmodel import col
+        stmt = select(self.model).where(col(self.model.id).in_(ids))
+        async with self.session as s:
+            return (await s.scalars(stmt)).all()
 
     async def find_one(self, **where) -> model:
         stmt = select(self.model).filter_by(**where)

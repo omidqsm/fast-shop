@@ -3,9 +3,10 @@ import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 
 from data.Address import AddressRepo
+from data.product import ProductRepo
 from data.user import UserRepo
 from helpers.crypto import Crypto
-from model.model import User, Address
+from model.model import User, Address, Product
 from tests.app import pytest_app
 
 
@@ -37,7 +38,7 @@ async def create_default_users():
 
 
 @pytest_asyncio.fixture()
-async def create_user_and_address():
+async def create_user_and_address_and_products():
     user = User(
         nid="3333445645",
         first_name="user",
@@ -54,7 +55,33 @@ async def create_user_and_address():
         user=user
     )
     address = await AddressRepo().add(address)
-    return user, address
+
+    product = {
+      "category": "mobile",
+      "info": {
+          "name": "asus"
+      },
+      "price": 1200,
+      "stock_quantity": 10
+    }
+    product_1 = Product(
+        category="headset",
+        price=500,
+        stock_quantity=15,
+        info={
+            "name": "beats"
+        }
+    )
+    product_2 = Product(
+        category="laptop",
+        price=2000,
+        stock_quantity=10,
+        info={
+            "name": "samsung"
+        }
+    )
+    p1, p2 = await ProductRepo().add((product_1, product_2))
+    return user, address, p1, p2
 
 
 @pytest.mark.asyncio
@@ -185,10 +212,20 @@ async def test_address_manipulation(create_default_users):
 
 
 @pytest.mark.asyncio
-async def test_order_manipulation(create_user_and_address):
-    user, address = create_user_and_address
+async def test_order_manipulation(create_user_and_address_and_products):
+    user, address, product_1, product_2 = create_user_and_address_and_products
     order = {
-        "address_id": address.id
+        "address_id": address.id,
+        "products": [
+            {
+                "quantity": 5,
+                "product_id": product_1.id,
+            },
+            {
+                "quantity": 2,
+                "product_id": product_2.id,
+            },
+        ]
     }
 
     async with AsyncClient(transport=ASGITransport(app=pytest_app), base_url="http://test") as client:

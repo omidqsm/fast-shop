@@ -35,6 +35,7 @@ class UserIn(UserBase):
         if pw1 != pw2:
             raise ValueError('passwords do not match')
         return self
+
     @field_validator('nid')
     @classmethod
     def check_nid_length(cls, v: str):
@@ -54,7 +55,12 @@ class UserOut(UserBase, Base):
     pass
 
 
-class User(UserBase, Base, table=True):
+class User(Base, table=True):
+    nid: str
+    first_name: str
+    last_name: str
+    phone: str
+    email: EmailStr | None = None
     password: SecretStr = Field(sa_type=String())
     scopes: str = Field(default='user')  # permissions
 
@@ -77,27 +83,52 @@ class AddressOut(AddressBase, Base):
     pass
 
 
-class Address(AddressBase, Base, table=True):
+class Address(Base, table=True):
+    state: str
+    city: str
+    description: str
+    postal_code: str
+    latitude: float | None = None
+    longitude: float | None = None
+
     user_id: int | None = Field(default=None, foreign_key="user.id")
     user: User | None = Relationship(back_populates="addresses")
 
 
 class OrderBase(SQLModel):
-    address_id: int
+    address_id: int | None = None
 
 
-class Order(OrderBase, Base, table=True):
+class OrderIn(OrderBase):
+    products: list["OrderProductIn"]
+
+
+class OrderCreateOut(Base):
+    status: str
+    status_date: datetime
+
+
+class OrderOut(OrderCreateOut):
+    products: list["OrderProductOut"]
+
+
+class Order(Base, table=True):
+    address_id: int | None = Field(default=None, foreign_key="address.id")
     status: str = Field(default=OrderStatus.created.value)
     status_date: datetime | None = Field(default=None, sa_type=DateTime(timezone=True), sa_column_kwargs={'server_default': func.now()})
-    address_id: int | None = Field(default=None, foreign_key="address.id")
     address: Address | None = Relationship()
+    products: list["OrderProduct"] | None = Relationship(back_populates="order", sa_relationship_kwargs={'cascade': "all, delete-orphan"})
 
-    # products: Mapped[List["OrderProduct"]] = relationship(back_populates="order", cascade="all, delete-orphan")
+    @model_validator(mode='before')
+    @classmethod
+    def validate(cls, order_in: OrderIn) -> Self:
+        order_in.products = [OrderProduct.model_validate(p) for p in order_in.products]
+        return order_in
 
 
 class ProductBase(SQLModel):
     category: str
-    info: dict = Field(sa_type=JSON())
+    info: dict
     price: int
     stock_quantity: int
 
@@ -106,20 +137,35 @@ class ProductOut(ProductBase, Base):
     pass
 
 
-class Product(ProductBase, Base, table=True):
-    pass
+class Product(Base, table=True):
+    category: str
+    info: dict = Field(sa_type=JSON())
+    price: int
+    stock_quantity: int
 
 
-# class OrderProduct(Common):
-#     __tablename__ = "order_product"
-#
-#     quantity: Mapped[int]
-#     price: Mapped[int]
-#
-#     order_id: Mapped[int] = mapped_column(ForeignKey("order.id"))
-#     order: Mapped["Order"] = relationship(back_populates="products")
-#
-#     product_id: Mapped[int] = mapped_column(ForeignKey("product.id"))
-#     product: Mapped["Product"] = relationship()
+class OrderProductIn(SQLModel):
+    quantity: int
+    product_id: int
 
 
+class OrderProductInfo(SQLModel):
+    category: str
+    info: dict
+
+
+class OrderProductOut(Base):
+    price: int
+    quantity: int
+    product: OrderProductInfo
+
+
+class OrderProduct(Base, table=True):
+    quantity: int | None = None
+    price: int | None = None
+
+    product_id: int | None = Field(default=None, foreign_key="product.id")
+    product: Product | None = Relationship()
+
+    order_id: int | None = Field(default=None, foreign_key="order.id")
+    order: Order | None = Relationship(back_populates="products")
