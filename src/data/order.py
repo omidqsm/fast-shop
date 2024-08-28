@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from data import RepoABC, Repo
 from helpers.exceptions import entity_not_found_exception
-from model.orm import Order, Address
+from model.model import Order, Address
 
 
 class OrderRepoABC(RepoABC, ABC):

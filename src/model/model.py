@@ -6,6 +6,8 @@ from pydantic import EmailStr, SecretStr, model_validator, field_validator, Conf
 from sqlalchemy import JSON, DateTime, func, Column, String
 from sqlmodel import SQLModel, Field, Relationship
 
+from model.enums import OrderStatus
+
 
 class Base(SQLModel):
     model_config = ConfigDict(from_attributes=True)
@@ -62,8 +64,7 @@ class User(UserBase, Base, table=True):
     )
 
 
-class Address(Base, table=True):
-
+class AddressBase(SQLModel):
     state: str
     city: str
     description: str
@@ -71,25 +72,42 @@ class Address(Base, table=True):
     latitude: float | None = None
     longitude: float | None = None
 
+
+class AddressOut(AddressBase, Base):
+    pass
+
+
+class Address(AddressBase, Base, table=True):
     user_id: int | None = Field(default=None, foreign_key="user.id")
     user: User | None = Relationship(back_populates="addresses")
 
 
-class Order(Base, table=True):
-    status: str
-    status_date: datetime = Field(sa_column=Column(DateTime(timezone=True), server_default=func.now()))
+class OrderBase(SQLModel):
+    address_id: int
 
-    address_id: int = Field(default=None, foreign_key="address.id")
-    address: Address = Relationship()
+
+class Order(OrderBase, Base, table=True):
+    status: str = Field(default=OrderStatus.created.value)
+    status_date: datetime | None = Field(default=None, sa_type=DateTime(timezone=True), sa_column_kwargs={'server_default': func.now()})
+    address_id: int | None = Field(default=None, foreign_key="address.id")
+    address: Address | None = Relationship()
 
     # products: Mapped[List["OrderProduct"]] = relationship(back_populates="order", cascade="all, delete-orphan")
 
 
-class Product(Base, table=True):
+class ProductBase(SQLModel):
     category: str
     info: dict = Field(sa_type=JSON())
     price: int
     stock_quantity: int
+
+
+class ProductOut(ProductBase, Base):
+    pass
+
+
+class Product(ProductBase, Base, table=True):
+    pass
 
 
 # class OrderProduct(Common):

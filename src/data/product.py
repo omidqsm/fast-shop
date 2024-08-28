@@ -1,7 +1,7 @@
 from abc import ABC
 
 from data import RepoABC, Repo
-from model.orm import Product
+from model.model import Product
 
 
 class ProductRepoABC(RepoABC, ABC):

@@ -4,7 +4,7 @@ from fastapi import APIRouter, status, Depends, Security
 
 from app_infra.routes import LogRoute
 from data.product import ProductRepoABC, ProductRepo
-from model.schema import ProductBase, ProductOut
+from model.model import ProductBase, ProductOut, Product
 from service.auth import AuthService
 
 router = APIRouter(route_class=LogRoute, prefix='/product', tags=['Product'])
@@ -12,13 +12,13 @@ router = APIRouter(route_class=LogRoute, prefix='/product', tags=['Product'])
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=ProductOut)
 async def create(
-    product: ProductBase,
+    product_in: ProductBase,
     product_repo: ProductRepoABC = Depends(ProductRepo),
     _=Security(AuthService.authorize, scopes=["admin"]),
 ):
-    product_model = product.to_model()
-    await product_repo.add(product_model)
-    return product_model
+    product = Product.model_validate(product_in)
+    await product_repo.add(product)
+    return product
 
 
 @router.get("/{pk}", response_model=ProductOut)

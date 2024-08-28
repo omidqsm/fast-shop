@@ -10,12 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app_infra.dependencies import get_db_session
 from db import async_session_maker
 from helpers.exceptions import entity_not_found_exception
-from model.orm import Base
-
-T = TypeVar('T')
+from model.model import Base
 
 
-class RepoABC(ABC):
+class RepoABC[T](ABC):
     model: ClassVar = T
 
     @abstractmethod

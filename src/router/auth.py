@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 
 from app_infra.routes import LogRoute
 from config import settings
-from model.orm import User, UserIn, UserOut
+from model.model import User, UserIn, UserOut
 from model.schema import Token, PhoneLogin
 from service.auth import AuthServiceABC, AuthService
 

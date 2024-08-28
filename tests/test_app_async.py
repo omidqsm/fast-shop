@@ -5,7 +5,7 @@ from httpx import AsyncClient, ASGITransport
 from data.Address import AddressRepo
 from data.user import UserRepo
 from helpers.crypto import Crypto
-from model.orm import User, Address
+from model.model import User, Address
 from tests.app import pytest_app
 
 

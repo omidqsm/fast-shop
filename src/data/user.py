@@ -3,7 +3,7 @@ from abc import ABC
 from sqlalchemy import select
 
 from data import RepoABC, Repo
-from model.orm import User
+from model.model import User
 
 
 class UserRepoABC(RepoABC, ABC):

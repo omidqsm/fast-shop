@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from data.user import UserRepoABC, UserRepo
 from helpers.crypto import Crypto, CryptoABC
 from helpers.exceptions import credentials_exception, access_forbidden_exception
-from model.orm import User, UserIn
+from model.model import User, UserIn
 
 
 @dataclasses.dataclass

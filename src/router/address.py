@@ -2,8 +2,7 @@ from fastapi import APIRouter, status, Depends
 
 from app_infra.routes import LogRoute
 from data.Address import AddressRepoABC, AddressRepo
-from model.orm import Address
-from model.schema import AddressBase, AddressOut
+from model.model import Address, AddressBase, AddressOut
 from service.auth import AuthService
 
 router = APIRouter(route_class=LogRoute, prefix='/address', tags=['Address'])
@@ -11,14 +10,13 @@ router = APIRouter(route_class=LogRoute, prefix='/address', tags=['Address'])
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=AddressOut)
 async def create(
-    address: AddressBase,
+    address_in: AddressBase,
     address_repo: AddressRepoABC = Depends(AddressRepo),
     user_id = Depends(AuthService.get_current_user_id)
 ):
-    address_model: Address = address.to_model()
-    address_model.user_id = user_id
-    await address_repo.add(address_model)
-    return address_model
+    address = Address.model_validate(address_in, update={'user_id': user_id})
+    await address_repo.add(address)
+    return address
 
 
 @router.get("/{pk}", response_model=AddressOut)

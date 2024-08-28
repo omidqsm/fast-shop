@@ -9,7 +9,7 @@ from passlib.context import CryptContext
 
 from config import settings
 from helpers.exceptions import credentials_exception
-from model.orm import User
+from model.model import User
 
 
 class CryptoABC(ABC):

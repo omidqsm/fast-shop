@@ -6,8 +6,7 @@ from fastapi import Depends
 from data.Address import AddressRepo, AddressRepoABC
 from data.order import OrderRepoABC, OrderRepo
 from model.enums import OrderStatus
-from model.orm import Order, Address
-from model.schema import OrderBase, OrderIn
+from model.model import OrderBase, Order
 
 
 @dataclass
@@ -30,8 +29,8 @@ class OrderService(OrderServiceABC):
         self.address_repo = address_repo if isinstance(address_repo, AddressRepoABC) else AddressRepo()
         self.order_repo = order_repo if isinstance(order_repo, OrderRepoABC) else OrderRepo()
 
-    async def create(self, order_in: OrderIn, user_id: int) -> Order:
-        order = order_in.to_model(status=OrderStatus.created.value)
+    async def create(self, order_in: OrderBase, user_id: int) -> Order:
+        order = Order.model_validate(order_in)
         if await self.address_repo.exists(id=order.address_id, user_id=user_id):
             await self.order_repo.add(order)
             return order
