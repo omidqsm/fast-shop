@@ -43,13 +43,8 @@ class OrderService(OrderServiceABC):
         # check stock quantity
         for p in order.products:
             stock_product = stock_products[p.product_id]
-            # if p.quantity > stock_product.quantity:
-            #     raise HTTPException(detail="quantity for than stock", status_code=status.HTTP_400_BAD_REQUEST)
-            p.price = stock_products[p.product_id].price
-            await self.product_repo.update(
-                {'id': stock_product.id},
-                {'quantity': stock_product.quantity - p.quantity}
-            )
+            if p.quantity > stock_product.quantity:
+                raise HTTPException(detail="quantity for than stock", status_code=status.HTTP_400_BAD_REQUEST)
 
-        await self.order_repo.add(order)
+        await self.order_repo.submit_order(order, stock_products)
         return order

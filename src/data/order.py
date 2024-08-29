@@ -13,6 +13,9 @@ class OrderRepoABC(RepoABC, ABC):
     async def get_one_for_user(self, pk, user_id):
         pass
 
+    @abstractmethod
+    async def submit_order(self, order, stock_products):
+        pass
 
 class OrderRepo(Repo, OrderRepoABC):
     model = Order
@@ -28,3 +31,15 @@ class OrderRepo(Repo, OrderRepoABC):
         if not order:
             raise entity_not_found_exception
         return order
+
+    async def submit_order(self, order, stock_products):
+        async with self.session.begin():
+            for p in order.products:
+                stock_product = stock_products[p.product_id]
+                self.session.add(stock_product)
+                p.price = stock_products[p.product_id].price
+                stock_product.quantity -= p.quantity
+
+            self.session.add(order)
+
+
