@@ -2,8 +2,8 @@ from datetime import datetime
 from typing import Self
 
 import phonenumbers
-from pydantic import EmailStr, SecretStr, model_validator, field_validator, ConfigDict
-from sqlalchemy import JSON, DateTime, func, Column, String
+from pydantic import EmailStr, SecretStr, model_validator, field_validator, ConfigDict, PositiveInt
+from sqlalchemy import JSON, DateTime, func, Column, String, CheckConstraint
 from sqlmodel import SQLModel, Field, Relationship
 
 from model.enums import OrderStatus
@@ -130,7 +130,7 @@ class ProductBase(SQLModel):
     category: str
     info: dict
     price: int
-    stock_quantity: int
+    quantity: PositiveInt
 
 
 class ProductOut(ProductBase, Base):
@@ -141,11 +141,11 @@ class Product(Base, table=True):
     category: str
     info: dict = Field(sa_type=JSON())
     price: int
-    stock_quantity: int
+    quantity: int = Field(ge=0, sa_column_args=[CheckConstraint('quantity>0')])
 
 
 class OrderProductIn(SQLModel):
-    quantity: int
+    quantity: PositiveInt
     product_id: int
 
 
@@ -155,13 +155,13 @@ class OrderProductInfo(SQLModel):
 
 
 class OrderProductOut(Base):
+    quantity: PositiveInt
     price: int
-    quantity: int
     product: OrderProductInfo
 
 
 class OrderProduct(Base, table=True):
-    quantity: int | None = None
+    quantity: int | None = Field(ge=0, sa_column_args=[CheckConstraint('quantity>0')])
     price: int | None = None
 
     product_id: int | None = Field(default=None, foreign_key="product.id")
