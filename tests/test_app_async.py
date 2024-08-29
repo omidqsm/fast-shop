@@ -55,15 +55,6 @@ async def create_user_and_address_and_products():
         user=user
     )
     address = await AddressRepo().add(address)
-
-    product = {
-      "category": "mobile",
-      "info": {
-          "name": "asus"
-      },
-      "price": 1200,
-      "quantity": 10
-    }
     product_1 = Product(
         category="headset",
         price=500,
