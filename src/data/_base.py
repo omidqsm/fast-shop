@@ -3,9 +3,10 @@ from typing import ClassVar, Iterable
 
 from fastapi import Depends
 from multimethod import multimethod
-from sqlalchemy import update, select, delete
+from sqlalchemy import update, select, delete, Delete, Update, Insert
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import SQLModel
 
 from app_infra.dependencies import get_db_session
 from db import async_session_maker
@@ -46,6 +47,10 @@ class RepoABC[T](ABC):
 
     @abstractmethod
     async def exists(self, **where) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def exec_all(self, *objects):
         raise NotImplementedError
 
 
@@ -111,3 +116,11 @@ class Repo(RepoABC):
         stmt = select(self.model.id).filter_by(**where).exists()
         async with self.session as s:
             return await s.scalar(select(stmt))
+
+    async def exec_all(self, *objects: SQLModel | Insert | Update | Delete):
+        async with self.session.begin():
+            for obj in objects:
+                if isinstance(obj, SQLModel):
+                    self.session.add(obj)
+                else:
+                    await self.session.execute(obj)
