@@ -34,6 +34,10 @@ class RepoABC[T](ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def get(self, limit, offset, **where):
+        raise NotImplementedError
+
+    @abstractmethod
     async def add(self, obj) -> model | list[model]:
         raise NotImplementedError
 
@@ -79,6 +83,11 @@ class Repo(RepoABC):
     async def get_by_ids(self, ids: list[int]) -> Iterable[model]:
         from sqlmodel import col
         stmt = select(self.model).where(col(self.model.id).in_(ids))
+        async with self.session as s:
+            return (await s.scalars(stmt)).all()
+
+    async def get(self, limit=10, offset=0, **where):
+        stmt = select(self.model).where(**where).offset(offset).limit(limit)
         async with self.session as s:
             return (await s.scalars(stmt)).all()
 

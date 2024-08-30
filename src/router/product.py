@@ -1,5 +1,3 @@
-from typing import Annotated
-
 from fastapi import APIRouter, status, Depends, Security
 
 from app_infra.routes import LogRoute
@@ -48,3 +46,12 @@ async def delete(
     _=Security(AuthService.authorize, scopes=["admin"]),
 ):
     await product_repo.delete(id=pk)
+
+
+@router.get("/", response_model=list[ProductOut])
+async def get(
+    page: int = 1,
+    product_repo: ProductRepoABC = Depends(ProductRepo)
+):
+    limit = 10
+    return await product_repo.get(offset=(page-1)*limit, limit=limit)
