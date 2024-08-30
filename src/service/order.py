@@ -48,5 +48,5 @@ class OrderService(OrderServiceABC):
             p.price = stock_product.price
             stock_product.quantity -= p.quantity
 
-        await self.order_repo.exec_all(order, *stock_products.values())
+        await self.order_repo.in_tran(order, *stock_products.values())
         return order

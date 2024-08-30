@@ -50,7 +50,7 @@ class RepoABC[T](ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def exec_all(self, *objects):
+    async def in_tran(self, *objects):
         raise NotImplementedError
 
 
@@ -117,7 +117,7 @@ class Repo(RepoABC):
         async with self.session as s:
             return await s.scalar(select(stmt))
 
-    async def exec_all(self, *objects: SQLModel | Insert | Update | Delete):
+    async def in_tran(self, *objects: SQLModel | Insert | Update | Delete):
         async with self.session.begin():
             for obj in objects:
                 if isinstance(obj, SQLModel):
