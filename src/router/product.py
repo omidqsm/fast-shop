@@ -15,7 +15,7 @@ async def create(
     _=Security(AuthService.authorize, scopes=["admin"]),
 ):
     product = Product.model_validate(product_in)
-    await product_repo.add(product)
+    await product_repo.in_tran(product)
     return product
 
 
@@ -35,7 +35,8 @@ async def update(
     _=Security(AuthService.authorize, scopes=["admin"]),
 ):
     product_values = product.model_dump()
-    await product_repo.update({'id': pk}, product_values)
+    update_stmt = product_repo.update({'id': pk}, product_values)
+    await product_repo.in_tran(update_stmt)
     return await product_repo.get_one(id=pk)
 
 
@@ -45,7 +46,8 @@ async def delete(
     product_repo: ProductRepoABC = Depends(ProductRepo),
     _=Security(AuthService.authorize, scopes=["admin"]),
 ):
-    await product_repo.delete(id=pk)
+    delete_stmt = product_repo.delete(id=pk)
+    await product_repo.in_tran(delete_stmt)
 
 
 @router.get("/", response_model=list[ProductOut])

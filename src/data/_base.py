@@ -18,10 +18,6 @@ class RepoABC[T](ABC):
     model: ClassVar = T
 
     @abstractmethod
-    async def _execute(self, *statements):
-        raise NotImplementedError
-
-    @abstractmethod
     async def find_one(self, **where):
         raise NotImplementedError
 
@@ -38,15 +34,11 @@ class RepoABC[T](ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def add(self, obj) -> model | list[model]:
+    def update(self, where: dict, values: dict):
         raise NotImplementedError
 
     @abstractmethod
-    async def update(self, where: dict, values: dict):
-        raise NotImplementedError
-
-    @abstractmethod
-    async def delete(self, **where):
+    def delete(self, **where):
         raise NotImplementedError
 
     @abstractmethod
@@ -63,14 +55,6 @@ class Repo(RepoABC):
 
     def __init__(self, session: AsyncSession = Depends(get_db_session)):
         self.session = session if isinstance(session, AsyncSession) else async_session_maker()
-
-    async def _execute(self, *statements):
-        async with self.session.begin():
-            for s in statements:
-                await self.session.execute(s)
-        # for s in statements:
-        #     await self.session.execute(s)
-        # await self.session.commit()
 
     async def get_one(self, **where):
         try:
@@ -96,35 +80,19 @@ class Repo(RepoABC):
         async with self.session:
             return await self.session.scalar(stmt)
 
-    @multimethod
-    async def add(self, obj):
-        pass
-
-    @add.register
-    async def _(self, obj: model) -> model:
-        async with self.session.begin():
-            self.session.add(obj)
-        return obj
-
-    @add.register
-    async def _(self, obj: Iterable[model]) -> Iterable[model]:
-        async with self.session.begin():
-            self.session.add_all(obj)
-        return obj
-
-    async def update(self, where: dict, values: dict) -> None:
-        stmt = update(self.model).filter_by(**where).values(**values)
-        await self._execute(stmt)
-
-    async def delete(self, **where) -> None:
-        stmt = delete(self.model).filter_by(**where)
-        await self._execute(stmt)
-
     async def exists(self, **where) -> bool:
         # stmt = exists(1).where(*where).select()  # second way
         stmt = select(self.model.id).filter_by(**where).exists()
         async with self.session as s:
             return await s.scalar(select(stmt))
+
+    def update(self, where: dict, values: dict) -> Update:
+        stmt = update(self.model).filter_by(**where).values(**values)
+        return stmt
+
+    def delete(self, **where) -> Delete:
+        stmt = delete(self.model).filter_by(**where)
+        return stmt
 
     async def in_tran(self, *objects: SQLModel | Insert | Update | Delete):
         async with self.session.begin():

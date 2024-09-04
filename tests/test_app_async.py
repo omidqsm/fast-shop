@@ -34,7 +34,7 @@ async def create_default_users():
         password=Crypto.get_hash("buyer_password"),
     )
     user_repo = UserRepo()
-    await user_repo.add((buyer, admin))
+    await user_repo.in_tran(buyer, admin)
 
 
 @pytest_asyncio.fixture()
@@ -46,7 +46,7 @@ async def create_user_and_address_and_products():
         phone="+9822334411",
         password=Crypto.get_hash("user_password"),
     )
-    user = await UserRepo().add(user)
+    await UserRepo().in_tran(user)
     address = Address(
         state="Tehran",
         city="Shahre Rey",
@@ -54,7 +54,7 @@ async def create_user_and_address_and_products():
         description="this is an address",
         user=user
     )
-    address = await AddressRepo().add(address)
+    await AddressRepo().in_tran(address)
     product_1 = Product(
         category="headset",
         price=500,
@@ -71,8 +71,8 @@ async def create_user_and_address_and_products():
             "name": "samsung"
         }
     )
-    p1, p2 = await ProductRepo().add((product_1, product_2))
-    return user, address, p1, p2
+    await ProductRepo().in_tran(product_1, product_2)
+    return user, address, product_1, product_2
 
 
 @pytest.mark.asyncio

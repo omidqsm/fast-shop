@@ -69,7 +69,8 @@ class AuthService(AuthServiceABC):
         user = User.model_validate(user_in)
         user.password = self.crypto.get_hash(user_in.password.get_secret_value())
         try:
-            return await self.user_repo.add(user)
+            await self.user_repo.in_tran(user)
+            return user
         except IntegrityError:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='User already exists')
 

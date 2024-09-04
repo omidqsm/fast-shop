@@ -15,7 +15,7 @@ async def create(
     user_id = Depends(AuthService.get_current_user_id)
 ):
     address = Address.model_validate(address_in, update={'user_id': user_id})
-    await address_repo.add(address)
+    await address_repo.in_tran(address)
     return address
 
 
@@ -36,7 +36,8 @@ async def update(
     address_repo: AddressRepoABC = Depends(AddressRepo),
 ):
     where = {'id': pk, 'user_id': user_id}
-    await address_repo.update(where=where, values=address.model_dump())
+    update_stmt = address_repo.update(where=where, values=address.model_dump())
+    await address_repo.in_tran(update_stmt)
     return await address_repo.get_one(**where)
 
 
@@ -46,4 +47,5 @@ async def delete(
     user_id: int = Depends(AuthService.get_current_user_id),
     address_repo: AddressRepoABC = Depends(AddressRepo)
 ):
-    await address_repo.delete(id=pk, user_id=user_id)
+    delete_stmt = address_repo.delete(id=pk, user_id=user_id)
+    await address_repo.in_tran(delete_stmt)
