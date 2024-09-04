@@ -10,14 +10,18 @@ from model.model import Order, Address, OrderProduct
 
 class OrderRepoABC(RepoABC, ABC):
     @abstractmethod
-    async def get_one_for_user(self, pk, user_id):
-        pass
+    async def get_one(self, pk, user_id):
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get(self, limit, offset, user_id):
+        raise NotImplementedError
 
 
 class OrderRepo(Repo, OrderRepoABC):
     model = Order
 
-    async def get_one_for_user(self, pk, user_id):
+    async def get_one(self, pk, user_id) -> Order:
         stmt = (
             select(Order).
             where(Order.id == pk, Address.user_id == user_id).
@@ -28,5 +32,15 @@ class OrderRepo(Repo, OrderRepoABC):
         if not order:
             raise entity_not_found_exception
         return order
+
+    async def get(self, limit, offset, user_id) -> list[Order]:
+
+        stmt = (
+            select(Order).where(Address.user_id == user_id).offset(offset).limit(limit).
+            options(joinedload(Order.products).joinedload(OrderProduct.product))
+        )
+        async with self.session as session:
+            orders = (await session.scalars(stmt)).unique()
+        return orders
 
 

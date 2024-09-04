@@ -21,8 +21,18 @@ async def create(
 
 @router.get("/{pk}", response_model=OrderOut)
 async def get(
-        pk: int,
-        user_id: int = Depends(AuthService.get_current_user_id),
-        order_repo: OrderRepoABC = Depends(OrderRepo),
+    pk: int,
+    user_id: int = Depends(AuthService.get_current_user_id),
+    order_repo: OrderRepoABC = Depends(OrderRepo),
 ):
-    return await order_repo.get_one_for_user(pk=pk, user_id=user_id)
+    return await order_repo.get_one(pk=pk, user_id=user_id)
+
+
+@router.get("/", response_model=list[OrderOut])
+async def get(
+    page: int = 1,
+    user_id: int = Depends(AuthService.get_current_user_id),
+    order_repo: OrderRepoABC = Depends(OrderRepo),
+):
+    limit = 10
+    return await order_repo.get(offset=(page-1)*limit, limit=limit, user_id=user_id)

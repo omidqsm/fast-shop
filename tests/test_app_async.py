@@ -205,7 +205,7 @@ async def test_address_manipulation(create_default_users):
 @pytest.mark.asyncio
 async def test_order_manipulation(create_user_and_address_and_products):
     user, address, product_1, product_2 = create_user_and_address_and_products
-    order = {
+    order_1 = {
         "address_id": address.id,
         "products": [
             {
@@ -218,12 +218,28 @@ async def test_order_manipulation(create_user_and_address_and_products):
             },
         ]
     }
+    order_2 = {
+        "address_id": address.id,
+        "products": [
+            {
+                "quantity": 1,
+                "product_id": product_1.id,
+            },
+            {
+                "quantity": 1,
+                "product_id": product_2.id,
+            },
+        ]
+    }
 
     async with AsyncClient(transport=ASGITransport(app=pytest_app), base_url="http://test") as client:
         credentials = {'phone': '+9822334411', 'password': 'user_password'}
         access_header = await get_access_header(client, credentials)
 
-        response = await client.post('/order/', json=order, headers=access_header)
+        response = await client.post('/order/', json=order_2, headers=access_header)
+        assert response.status_code == 201
+
+        response = await client.post('/order/', json=order_1, headers=access_header)
         assert response.status_code == 201
 
         response_data = response.json()
@@ -232,11 +248,16 @@ async def test_order_manipulation(create_user_and_address_and_products):
         response = await client.get(f'/order/{pk}', headers=access_header)
         assert response.status_code == 200
 
+        response = await client.get(f'/order/?page=1', headers=access_header)
+        assert response.status_code == 200
+        response_data = response.json()
+        assert len(response_data) > 0
+
 
 @pytest.mark.asyncio
 async def test_product_list(create_user_and_address_and_products):
     async with AsyncClient(transport=ASGITransport(app=pytest_app), base_url="http://test") as client:
-        response = await client.get(f'/product/?page=0')
+        response = await client.get(f'/product/?page=1')
         assert response.status_code == 200
         response_data = response.json()
         assert len(response_data) > 0
