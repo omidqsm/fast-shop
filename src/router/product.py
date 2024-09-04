@@ -51,7 +51,7 @@ async def delete(
 
 
 @router.get("/", response_model=list[ProductOut])
-async def get(
+async def get_all(
     page: int = 1,
     product_repo: ProductRepoABC = Depends(ProductRepo)
 ):

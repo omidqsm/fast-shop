@@ -29,7 +29,7 @@ async def get(
 
 
 @router.get("/", response_model=list[OrderOut])
-async def get(
+async def get_all(
     page: int = 1,
     user_id: int = Depends(AuthService.get_current_user_id),
     order_repo: OrderRepoABC = Depends(OrderRepo),
