@@ -35,4 +35,5 @@ async def get_all(
     order_repo: OrderRepoABC = Depends(OrderRepo),
 ):
     limit = 10
-    return await order_repo.get(offset=(page-1)*limit, limit=limit, user_id=user_id)
+    result = await order_repo.get(offset=(page-1)*limit, limit=limit, user_id=user_id)
+    return result

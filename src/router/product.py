@@ -1,4 +1,5 @@
 from fastapi import APIRouter, status, Depends, Security
+from fastapi_cache.decorator import cache
 
 from app_infra.routes import LogRoute
 from data.product import ProductRepoABC, ProductRepo
@@ -51,9 +52,11 @@ async def delete(
 
 
 @router.get("/", response_model=list[ProductOut])
+@cache(expire=600)
 async def get_all(
     page: int = 1,
     product_repo: ProductRepoABC = Depends(ProductRepo)
 ):
     limit = 10
-    return await product_repo.get(offset=(page-1)*limit, limit=limit)
+    result = await product_repo.get(offset=(page-1)*limit, limit=limit)
+    return result

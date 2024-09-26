@@ -40,7 +40,7 @@ class OrderRepo(Repo, OrderRepoABC):
             options(joinedload(Order.products).joinedload(OrderProduct.product))
         )
         async with self.session as session:
-            orders = (await session.scalars(stmt)).unique()
+            orders = (await session.scalars(stmt)).unique().all()
         return orders
 
 
