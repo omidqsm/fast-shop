@@ -1,14 +1,16 @@
 from abc import ABC, abstractmethod
 from typing import ClassVar, Iterable
 
+from aredis_om import JsonModel
 from fastapi import Depends
 from multimethod import multimethod
+from redis import Redis
 from sqlalchemy import update, select, delete, Delete, Update, Insert
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import SQLModel
 
-from app_infra.dependencies import get_db_session
+from app_infra.dependencies import get_db_session, get_redis
 from db import async_session_maker
 from helpers.exceptions import entity_not_found_exception
 from model.model import Base
@@ -101,3 +103,42 @@ class Repo(RepoABC):
                     self.session.add(obj)
                 else:
                     await self.session.execute(obj)
+
+
+class CacheRepoABC(ABC):
+    @abstractmethod
+    async def get(self, pk):
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete(self, pk):
+        raise NotImplementedError
+
+    @abstractmethod
+    async def save(self, *objects):
+        raise NotImplementedError
+
+    @abstractmethod
+    async def all(self, offset: int, limit: int):
+        raise NotImplementedError
+
+
+class CacheRepo(CacheRepoABC):
+    model = JsonModel
+
+    def __init__(self, redis_conn: Redis = Depends(get_redis)):
+        self.model.Meta.database = redis_conn
+
+    async def get(self, pk: int) -> model:
+        return await self.model.get(pk)
+
+    async def delete(self, pk: int):
+        await self.model.delete(pk)
+
+    async def save(self, *objects: SQLModel):
+        for o in objects:
+            cache = self.model(**o.model_dump(), pk=str(o.id))
+            await cache.save()
+
+    async def all(self, offset: int = 0, limit: int = 100):
+        return await self.model.find().page(offset=offset, limit=limit)

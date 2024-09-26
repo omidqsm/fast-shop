@@ -75,7 +75,6 @@ async def create_user_and_address_and_products():
     return user, address, product_1, product_2
 
 
-@pytest.mark.asyncio
 async def test_authentication():
     async with AsyncClient(transport=ASGITransport(app=pytest_app), base_url="http://test") as client:
         user = {
@@ -106,7 +105,6 @@ async def test_authentication():
         assert response_data['phone'] == '+982133551020'
 
 
-@pytest.mark.asyncio
 async def test_product_manipulation(create_default_users):
     async with AsyncClient(transport=ASGITransport(app=pytest_app), base_url="http://test") as client:
         product = {
@@ -156,7 +154,6 @@ async def test_product_manipulation(create_default_users):
         assert response.status_code == 404
 
 
-@pytest.mark.asyncio
 async def test_address_manipulation(create_default_users):
     async with AsyncClient(transport=ASGITransport(app=pytest_app), base_url="http://test") as client:
         address = {
@@ -202,7 +199,6 @@ async def test_address_manipulation(create_default_users):
         assert response.status_code == 404
 
 
-@pytest.mark.asyncio
 async def test_order_manipulation(create_user_and_address_and_products):
     user, address, product_1, product_2 = create_user_and_address_and_products
     order_1 = {
@@ -254,7 +250,6 @@ async def test_order_manipulation(create_user_and_address_and_products):
         assert len(response_data) > 0
 
 
-@pytest.mark.asyncio
 async def test_product_list(create_user_and_address_and_products):
     async with AsyncClient(transport=ASGITransport(app=pytest_app), base_url="http://test") as client:
         response = await client.get(f'/product/?page=1')
