@@ -11,7 +11,7 @@ from db import make_db, clean_db
 async def lifespan(app: FastAPI):
     make_logger()
     await make_db()
-    make_cache()
+    await make_cache()
     yield
     await clean_db()
 

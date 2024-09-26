@@ -9,7 +9,7 @@ from db import make_db
 
 async def init():
     await make_db()
-    make_cache()
+    await make_cache()
 
 
 asyncio.run(init())

@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     login_path: str = 'auth/login'
     auth_scheme: APIKeyHeader = APIKeyHeader(name='X-API-Key')  # X-API-Key can be any arbitrary name
     auth_route_prefix: str = '/auth'
+    redis_url: str = 'redis://localhost:6379'
 
     model_config = SettingsConfigDict(env_file="envs/.env")
 
